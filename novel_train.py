@@ -38,8 +38,8 @@ def train(dataset, model, args):
 
         for batch, (x, y) in enumerate(dataloader):
             optimizer.zero_grad()
-            x = x.to(device)
-            y = y.to(device)
+            x = x.to(device)  # 提取当前句子的张量表示
+            y = y.to(device)  # 提取下一个句子的张量表示
 
             y_pred, (state_h, state_c) = model(x, (state_h, state_c))
 
@@ -88,11 +88,11 @@ if __name__ == '__main__':
     print("训练设备:{}".format(device))
     parser = argparse.ArgumentParser(description='lstm')
     parser.add_argument('--train-novel-path', type=str, default='datasets')
-    parser.add_argument('--max-epochs', type=int, default=10)  # 训练多少遍 总的文本  , default=20)
+    parser.add_argument('--max-epochs', type=int, default=1)  # 训练多少遍 总的文本  , default=20)
     parser.add_argument('--batch-size', type=int, default=64)  # default=256)
     parser.add_argument('--sequence-length', type=int, default=75)  # sequence-length 每次训练多长的句子, default=20)
-    parser.add_argument('--learning-rate', type=float, default=0.001)  # 添加学习率参数
-    parser.add_argument('--save-interval', type=int, default=1000)  # 添加模型保存间隔参数
+    parser.add_argument('--learning-rate', type=float, default=0.01)  # 添加学习率参数
+    parser.add_argument('--save-interval', type=int, default=500)  # 添加模型保存间隔参数
     parser.add_argument('--logdir', type=str, default='./tf-logs')  # 添加模型保存间隔参数
 
     input_size = 256
@@ -136,7 +136,7 @@ if __name__ == '__main__':
         print('发现有保存的Model,load model ....\n------开始训练----------')
     else:
         print('没保存的Model,Creat model .... \n------开始训练----------')
-        model = BiLstmModel(len(bd), input_size, args.hidden_size, args.embedding_dim, args.num_layers, device)
+        model = BiLstmModel(13500, input_size, args.hidden_size, args.embedding_dim, args.num_layers, device)
     model.to(device)
     total_params = sum(p.numel() for p in model.parameters())
     print(f"模型的参数数量为: {total_params}")

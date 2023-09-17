@@ -2,41 +2,31 @@ import multiprocessing
 from multiprocessing import Pool
 import torch
 
-
 import os
 
 from util import encode_word
 
 
-
-
-
 class WordDataset(torch.utils.data.Dataset):
-    def __init__(self, args, bd, list = None):
+    def __init__(self, args, bd, word_list=None):
         self.args = args
         self.bd = bd
 
-        #把小说的 字 转换成 int
-        self.words_indexes = []
-        if list==None:
+        # 把小说的 字 转换成 int
+        if word_list is None:
             words = self.load_words()
-            # 创建一个进程池，设置进程数量
-            num_threads = multiprocessing.cpu_count()
-            print("当前CPU的线程数：", num_threads)
-            pool = Pool(processes=num_threads)  
-            
-            # 并行地对单词进行编码
+            self.words_indexes = self.parallel_encode(words)
+        else:
+            self.words_indexes = word_list
+
+    def parallel_encode(self, words):
+        num_threads = multiprocessing.cpu_count()
+        print("当前CPU的线程数：", num_threads)
+
+        with Pool(processes=num_threads) as pool:
             results = pool.starmap(encode_word, [(self.bd, w) for w in words])
 
-            # 关闭进程池
-            pool.close()
-            pool.join()
-
-            # 将编码结果扁平化，并存储到self.words_indexes中
-            self.words_indexes = [index for sublist in results for index in sublist]
-        else:
-            self.words_indexes = list
-
+        return [index for sublist in results for index in sublist]
 
     def load_words(self):
         """加载数据集"""
@@ -57,9 +47,6 @@ class WordDataset(torch.utils.data.Dataset):
         return len(self.words_indexes) - self.args.sequence_length
 
     def __getitem__(self, index):
-        
-        return (
-            torch.tensor(self.words_indexes[index:index + self.args.sequence_length]),
-            torch.tensor(self.words_indexes[index + 1:index + self.args.sequence_length + 1]),
-        )
 
+        return (torch.tensor(self.words_indexes[index:index + self.args.sequence_length]),
+                torch.tensor(self.words_indexes[index + 1:index + self.args.sequence_length + 1]))
